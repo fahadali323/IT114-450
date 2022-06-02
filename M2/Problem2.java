@@ -49,5 +49,4 @@ public class Problem2 {
         System.out.println("Total is " + totalOutput);
         System.out.println("End process");
     }
-
 }
