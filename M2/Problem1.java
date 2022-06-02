@@ -17,10 +17,23 @@ public class Problem1 {
         System.out.println("Processing Array:" + Arrays.toString(arr));
         System.out.println("Odds output:");
         //TODO add/edit code here
-        
+        /*
+        ucid : fa376
+        date: 5/30/22
+        explanation: coded the part for only outputting array numbers on a single line
+        The code looks as each element in the array by index of i and takes that element
+        divides it by 2 but gets the remainder by using %. If the remainder is not equal 
+        to 0 then it is an odd number. Then for each index that is odd it gets printed out. 
+        */
+        for(int i = 0; i<arr.length;i++)
+        {
+            if(arr[i]%2!=0)
+            {   
+                System.out.print(arr[i]+ " ");
+            }   
+        }
         //end add/edit section
         System.out.println();
         System.out.println("End process");
     }
-    
 }
