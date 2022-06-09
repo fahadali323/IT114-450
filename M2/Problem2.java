@@ -1,3 +1,5 @@
+package M2;
+
 import java.text.DecimalFormat;
 import java.util.Arrays;
 

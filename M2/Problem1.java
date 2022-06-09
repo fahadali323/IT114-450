@@ -1,3 +1,5 @@
+package M2;
+
 import java.util.Arrays;
 
 public class Problem1 {
