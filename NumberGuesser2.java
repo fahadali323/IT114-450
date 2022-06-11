@@ -23,6 +23,22 @@ public class NumberGuesser2 {
                             "I picked a random number between 1-" + (range + 1) + ", let's see if you can guess.");
                     number = new Random().nextInt(range) + 1;
                     pickNewRandom = false;
+                    System.out.println("random number: " + number);
+                    if (level == 3)
+                    {   
+                        maxStrikes = 4;
+                        System.out.println("You are level 3. The maxstrikes has been decreased from 5 to 4." + "\nStrikes: " + maxStrikes );
+                    }
+                    else if (level == 5)
+                    {
+                        maxStrikes = 3;
+                        System.out.println("You are level 5. The maxstrikes has been decreased from 4 to 3." + "\nStrikes: " + maxStrikes);
+                    }
+                    else if (level == 6)
+                    {
+                        maxStrikes = 2;
+                        System.out.println("You are level 6. The maxstrikes has been decreased from 3 to 2."+ "\nStrikes: " + maxStrikes);
+                    }
                 }
                 System.out.println("Type a number and press enter");
 
@@ -48,24 +64,16 @@ public class NumberGuesser2 {
                         level++;// level up!
                         strikes = 0;// make sure we clear these out, otherwise it's not really fair
                         pickNewRandom = true;
-
                     }
-                    		/*
-				 * adding Display higher or lower as a hint after a wrong guess
-				 */
-                else if (guess > number)
-                {
-                    System.out.println("The number is lower.");
-                }
-                else if (guess < number)
-                {
-                    System.out.println("The number is higher.");
-                } 
-                    else {
-                        System.out.println("That's wrong");
+                    /*
+                    * adding Display higher or lower as a hint after a wrong guess
+                    */
+                    else if (guess > number)
+                    {
                         strikes++;
+                        System.out.println("That's wrong. The number is lower.");
                         if (strikes >= maxStrikes) {
-                            System.out.println("Uh oh, looks like you need to get some more practice.");
+                            System.out.println("Uh oh, looks like you need to get some more practice.\n");
                             strikes = 0;
                             level--;
                             //prevent level from being less than 1
@@ -75,8 +83,24 @@ public class NumberGuesser2 {
                             pickNewRandom = true;
                         }
                     }
+                    else if (guess < number)
+                    {
+                        strikes++;
+                        System.out.println("That's wrong. The number is higher.");
+                        if (strikes >= maxStrikes) {
+                            System.out.println("Uh oh, looks like you need to get some more practice.\n");
+                            strikes = 0;
+                            level--;
+                            //prevent level from being less than 1
+                            if (level < 1) {
+                                level = 1;
+                            }
+                            pickNewRandom = true;
+                        }
+                    }  
                 }
-            } while (true);
+            }
+            while (true);
         } catch (Exception e) {
             System.out.println("An unexpected error occurred. Goodbye.");
             e.printStackTrace();
