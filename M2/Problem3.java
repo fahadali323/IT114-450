@@ -1,6 +1,8 @@
-import java.util.Arrays;
-import java.util.stream.IntStream;
+package M2;
 
+import java.util.Arrays;
+
+import java.util.stream.IntStream;
 import javax.lang.model.type.ArrayType;
 
 public class Problem3 {
