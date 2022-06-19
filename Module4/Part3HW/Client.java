@@ -1,4 +1,4 @@
-package Module4.Part3;
+package Module4.Part3HW;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -107,12 +107,13 @@ public class Client {
         }
         return false;
     }
-
+    //connect localhost:3000
     private void listenForKeyboard() {
         inputThread = new Thread() {
             @Override
             public void run() {
                 System.out.println("Listening for input");
+                System.out.println("Connect to the server");
                 try (Scanner si = new Scanner(System.in);) {
                     String line = "";
                     isRunning = true;
@@ -123,7 +124,6 @@ public class Client {
                             if (!processCommand(line)) {
                                 if (isConnected()) {
                                      out.writeObject(line);
-
                                 } else {
                                     System.out.println("Not connected to server");
                                 }
@@ -172,7 +172,6 @@ public class Client {
             }
         };
         fromServerThread.start();// start the thread
-
     }
 
     public void start() throws IOException {
