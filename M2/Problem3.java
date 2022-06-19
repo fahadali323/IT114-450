@@ -2,9 +2,6 @@ package M2;
 
 import java.util.Arrays;
 
-import java.util.stream.IntStream;
-import javax.lang.model.type.ArrayType;
-
 public class Problem3 {
     public static void main(String[] args) {
         // Don't edit anything here
