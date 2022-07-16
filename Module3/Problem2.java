@@ -1,4 +1,4 @@
-package M2;
+package Module3;
 
 import java.text.DecimalFormat;
 import java.util.Arrays;
