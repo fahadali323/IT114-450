@@ -4,10 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+
 import Module7.Milestone2.Common.Constants;
+
+//Milesonte 2 imports
 
 public class Room implements AutoCloseable {
 	private String name;
@@ -20,6 +24,8 @@ public class Room implements AutoCloseable {
 	private final static String DISCONNECT = "disconnect";
 	private final static String LOGOUT = "logout";
 	private final static String LOGOFF = "logoff";
+	private final static String FLIP = "flip";
+	private final static String ROLL = "roll";
 	private static Logger logger = Logger.getLogger(Room.class.getName());
 
 	public Room(String name) {
@@ -105,6 +111,14 @@ public class Room implements AutoCloseable {
 						roomName = comm2[1];
 						Room.joinRoom(roomName, client);
 						break;
+					case FLIP:
+						boolean coinflip = flipcoin();
+						sendMessage(client, coinflip ? "heads" : "tails");
+						break;
+					case ROLL:
+						int roll = roll();
+						sendMessage(client, client.getClientName() + " rolled " + roll);
+						break;
 					case DISCONNECT:
 					case LOGOUT:
 					case LOGOFF:
@@ -122,6 +136,16 @@ public class Room implements AutoCloseable {
 	}
 
 	// Command helper methods
+	// Milestone2 feature implementation
+	private boolean flipcoin() {
+		Random Flip = new Random();
+		return Flip.nextBoolean();
+	}
+
+	private int roll() {
+		Random roll = new Random();
+		return roll.nextInt(150);
+	}
 
 	protected static void getRooms(String query, ServerThread client) {
 		String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -164,6 +188,7 @@ public class Room implements AutoCloseable {
 			return;
 		}
 		info("Sending message to " + clients.size() + " clients");
+		message = formatMessage(message);
 		if (sender != null && processCommands(message, sender)) {
 			// it was a command, don't broadcast
 			return;
@@ -179,6 +204,78 @@ public class Room implements AutoCloseable {
 				}
 			}
 		}
+	}
+
+	public static final String TEXT_RESET = "\u001B[0m";
+	public static final String TEXT_BLACK = "\u001B[30m";
+	public static final String TEXT_RED = "\u001B[31m";
+	public static final String TEXT_GREEN = "\u001B[32m";
+	public static final String TEXT_YELLOW = "\u001B[33m";
+	public static final String TEXT_BLUE = "\u001B[34m";
+	public static final String TEXT_PURPLE = "\u001B[35m";
+	public static final String TEXT_CYAN = "\u001B[36m";
+	public static final String TEXT_WHITE = "\u001B[37m";
+	public static final String TEXT_BOLD = "\033[0;1m";
+	public static final String TEXT_ITALICS = "\033[0m";
+
+	private String formatMessage(String message) {
+
+		String p[] = message.split("\\*");
+		String newmsg[] = new String[p.length];
+		for (int i = 0; i < newmsg.length; i++) {
+			if (p[i].startsWith(" ") || p[i].endsWith(" ")) {
+				newmsg[i] = p[i];
+			} else {
+				char symbol = p[i].charAt(0);
+				switch (symbol) {
+					case ('U'):
+					String underline = String.join("\u0332",message.split("",-1));
+					newmsg[i] = (underline);
+					break;
+					case ('O'):
+						String bold = (TEXT_BOLD + p[i]);
+						newmsg[i] = (bold);
+						break;
+					case ('I'):
+						String italics = (TEXT_ITALICS+ p[i]);
+						newmsg[i] = (italics);
+						break;
+					case ('Y'):
+						String y = TEXT_YELLOW + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (y);
+						break;
+					case ('R'):
+						String r = TEXT_RED + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (r);
+						break;
+					case ('b'):
+						String b = TEXT_BLACK + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (b);
+						break;
+					case ('G'):
+						String g = TEXT_GREEN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (g);
+						break;
+					case ('B'):
+						String bl = TEXT_BLUE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (bl);
+						break;
+					case ('P'):
+						String P = TEXT_PURPLE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (P);
+						break;
+					case ('C'):
+						String c = TEXT_CYAN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (c);
+						break;
+					case ('W'):
+						String w = TEXT_WHITE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+						newmsg[i] = (w);
+						break;
+				}
+			}
+		}
+		return message;
 	}
 
 	protected synchronized void sendUserListToClient(ServerThread receiver) {
