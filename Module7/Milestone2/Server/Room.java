@@ -8,7 +8,6 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 import Module7.Milestone2.Common.Constants;
 
 //Milesonte 2 imports
@@ -188,11 +187,11 @@ public class Room implements AutoCloseable {
 			return;
 		}
 		info("Sending message to " + clients.size() + " clients");
-		message = formatMessage(message);
 		if (sender != null && processCommands(message, sender)) {
 			// it was a command, don't broadcast
 			return;
 		}
+		message = formatMessage(message);
 		long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
 		synchronized (clients) {
 			Iterator<ServerThread> iter = clients.iterator();
@@ -207,76 +206,140 @@ public class Room implements AutoCloseable {
 	}
 
 	public static final String TEXT_RESET = "\u001B[0m";
-	public static final String TEXT_BLACK = "\u001B[30m";
 	public static final String TEXT_RED = "\u001B[31m";
-	public static final String TEXT_GREEN = "\u001B[32m";
 	public static final String TEXT_YELLOW = "\u001B[33m";
-	public static final String TEXT_BLUE = "\u001B[34m";
 	public static final String TEXT_PURPLE = "\u001B[35m";
-	public static final String TEXT_CYAN = "\u001B[36m";
-	public static final String TEXT_WHITE = "\u001B[37m";
-	public static final String TEXT_BOLD = "\033[0;1m";
-	public static final String TEXT_ITALICS = "\033[0m";
 
-	private String formatMessage(String message) {
-
-		String p[] = message.split("\\*");
-		String newmsg[] = new String[p.length];
-		for (int i = 0; i < newmsg.length; i++) {
-			if (p[i].startsWith(" ") || p[i].endsWith(" ")) {
-				newmsg[i] = p[i];
-			} else {
-				char symbol = p[i].charAt(0);
-				switch (symbol) {
-					case ('U'):
-					String underline = String.join("\u0332",message.split("",-1));
-					newmsg[i] = (underline);
-					break;
-					case ('O'):
-						String bold = (TEXT_BOLD + p[i]);
-						newmsg[i] = (bold);
-						break;
-					case ('I'):
-						String italics = (TEXT_ITALICS+ p[i]);
-						newmsg[i] = (italics);
-						break;
-					case ('Y'):
-						String y = TEXT_YELLOW + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (y);
-						break;
-					case ('R'):
-						String r = TEXT_RED + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (r);
-						break;
-					case ('b'):
-						String b = TEXT_BLACK + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (b);
-						break;
-					case ('G'):
-						String g = TEXT_GREEN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (g);
-						break;
-					case ('B'):
-						String bl = TEXT_BLUE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (bl);
-						break;
-					case ('P'):
-						String P = TEXT_PURPLE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (P);
-						break;
-					case ('C'):
-						String c = TEXT_CYAN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (c);
-						break;
-					case ('W'):
-						String w = TEXT_WHITE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-						newmsg[i] = (w);
-						break;
+	protected synchronized String formatMessage(String message) {
+		String newmessage = message;
+		if (newmessage.indexOf("@@") > -1) {
+			String[] s1 = newmessage.split("@@");
+			String m = "";
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
+					m += s1[i];
+				} else {
+					m += "<b>" + s1[i] + "</b>";
 				}
+				System.out.println(s1[i]);
 			}
+			newmessage = m;
 		}
-		return message;
+		if (newmessage.indexOf("\\") > -1) {
+			String[] s1 = newmessage.split("\\$\\$");
+			String m = "";
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
+					m += s1[i];
+				} else {
+					m += "<i>" + s1[i] + "</i>";
+				}
+				System.out.println(s1[i]);
+			}
+			newmessage = m;
+		}
+		if (newmessage.indexOf("__") > -1) {
+			String[] s1 = newmessage.split("\\*\\*");
+			String m = "";
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
+					m += s1[i];
+				} else {
+					m += "<u>" + s1[i] + "</u>";
+				}
+				System.out.println(s1[i]);
+			}
+			newmessage = m;
+		}
+		// color for red
+		if (newmessage.indexOf("-r") > -1) {
+			String[] s1 = newmessage.split("\\-");
+			String m = "";
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith("r") || s1[i].endsWith("r")) {
+					m += TEXT_RED + s1[i].substring(2, s1[i].length() - 2) + TEXT_RESET;
+				} else {
+					m += s1[i];
+				}
+				System.out.println(s1[i]);
+			}
+			newmessage = m;
+		}
+		if (newmessage.indexOf("-y") > -1) {
+			String[] s1 = newmessage.split("\\-");
+			String m = "";
+			for (int i = 0; i < s1.length; i++) {
+				if (s1[i].startsWith("y") || s1[i].endsWith("y")) {
+					m += TEXT_YELLOW + s1[i].substring(2, s1[i].length() - 2) + TEXT_RESET;
+				} else {
+					m += s1[i];
+				}
+				System.out.println(s1[i]);
+			}
+			newmessage = m;
+		}
+		return newmessage;
 	}
+	// private String formatMessage(String message) {
+	// return TEXT_BLACK + message + TEXT_RESET;
+	// }
+	// String p[] = message.split("\\*");
+	// String newmessage[] = new String[p.length];
+	// for (int i = 0; i < newmessage.length; i++) {
+	// if (p[i].startsWith(" ") || p[i].endsWith(" ")) {
+	// newmessage[i] = p[i];
+	// } else {
+	// char symbol = p[i].charAt(0);
+	// switch (symbol) {
+	// case ('U'):
+	// String underline = String.join("\u0332",message.split("",-1));
+	// newmessage[i] = (underline);
+	// break;
+	// case ('O'):
+	// String bold = (TEXT_BOLD + p[i]);
+	// newmessage[i] = (bold);
+	// break;
+	// case ('I'):
+	// String italics = (TEXT_ITALICS+ p[i]);
+	// newmessage[i] = (italics);
+	// break;
+	// case ('Y'):
+	// String y = TEXT_YELLOW + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (y);
+	// break;
+	// case ('R'):
+	// String r = TEXT_RED + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (r);
+	// break;
+	// case ('b'):
+	// String b = TEXT_BLACK + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (b);
+	// break;
+	// case ('G'):
+	// String g = TEXT_GREEN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (g);
+	// break;
+	// case ('B'):
+	// String bl = TEXT_BLUE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (bl);
+	// break;
+	// case ('P'):
+	// String P = TEXT_PURPLE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (P);
+	// break;
+	// case ('C'):
+	// String c = TEXT_CYAN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (c);
+	// break;
+	// case ('W'):
+	// String w = TEXT_WHITE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
+	// newmessage[i] = (w);
+	// break;
+	// }
+	// }
+	// }
+	// return TEXT_BLACK + message + TEXT_RESET;
+	// // }
 
 	protected synchronized void sendUserListToClient(ServerThread receiver) {
 		logger.log(Level.INFO, String.format("Room[%s] Syncing client list of %s to %s", getName(), clients.size(),
