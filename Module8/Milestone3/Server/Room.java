@@ -25,6 +25,8 @@ public class Room implements AutoCloseable {
 	private final static String LOGOFF = "logoff";
 	private final static String FLIP = "flip";
 	private final static String ROLL = "roll";
+	private final static String MUTE = "mute";
+	private final static String UNMUTE = "unmute";
 	private static Logger logger = Logger.getLogger(Room.class.getName());
 
 	public Room(String name) {
@@ -111,12 +113,23 @@ public class Room implements AutoCloseable {
 						Room.joinRoom(roomName, client);
 						break;
 					case FLIP:
-						boolean coinflip = flipcoin();
-						sendMessage(client, coinflip ? "heads" : "tails");
+						flipcoin(client);
 						break;
 					case ROLL:
-						int roll = roll();
-						sendMessage(client, client.getClientName() + " rolled " + roll);
+						int rol = Integer.valueOf(comm2[1]);
+						roll(client, rol);
+						break;
+					case MUTE:
+						String mutedUser = comm2[1];
+						// String mutedmessage = "You have been muted";
+						client.mute(mutedUser);
+						sendPrivateMessage(client, new ArrayList<String>(), message);
+						break;
+					case UNMUTE:
+						String unmuteUser = comm2[1];
+						// String umutemessage = "You have been unmuted";
+						client.unmute(unmuteUser);
+						sendPrivateMessage(client, new ArrayList<String>() , message);
 						break;
 					case DISCONNECT:
 					case LOGOUT:
@@ -134,17 +147,6 @@ public class Room implements AutoCloseable {
 		return wasCommand;
 	}
 
-	// Command helper methods
-	// Milestone2 feature implementation
-	private boolean flipcoin() {
-		Random Flip = new Random();
-		return Flip.nextBoolean();
-	}
-
-	private int roll() {
-		Random roll = new Random();
-		return roll.nextInt(150);
-	}
 
 	protected static void getRooms(String query, ServerThread client) {
 		String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -187,8 +189,8 @@ public class Room implements AutoCloseable {
 			return;
 		}
 		info("Sending message to " + clients.size() + " clients");
-		if (sender != null && processCommands(message, sender)) {
-			// it was a command, don't broadcast
+		if (sender != null && processCommands(message, sender) || privatemessage(message, sender)) {
+			// it was a command or was a private message don't broadcast
 			return;
 		}
 		message = formatMessage(message);
@@ -197,23 +199,80 @@ public class Room implements AutoCloseable {
 			Iterator<ServerThread> iter = clients.iterator();
 			while (iter.hasNext()) {
 				ServerThread client = iter.next();
-				boolean messageSent = client.sendMessage(from, message);
-				if (!messageSent) {
-					handleDisconnect(iter, client);
-				}
+				if(!client.isMuted(sender.getClientName())){
+					boolean messageSent = client.sendMessage(from, message);
+					if (!messageSent) {
+						handleDisconnect(iter, client);
+					}
+				} 
 			}
 		}
 	}
 
-	public static final String TEXT_RESET = "\u001B[0m";
-	public static final String TEXT_RED = "\u001B[31m";
-	public static final String TEXT_YELLOW = "\u001B[33m";
-	public static final String TEXT_PURPLE = "\u001B[35m";
+	// Command helper methods
+	//
+	//
+	//
+	// Milestone2 feature implementation
+	protected synchronized void flipcoin(ServerThread sender) {
+		Random random = new Random();
+		int coins = random.nextInt(4);
+		String m;
+		if (coins % 2 == 0) {
+			m = "-r The Coin is Heads r-";
+		} else {
+			m = "-r The Coin is tails r-";
+		}
+		sendMessage(sender, m);
+	}
+
+	protected synchronized void roll(ServerThread sender, int number) {
+		Random random = new Random();
+		int num = random.nextInt(number);
+		String m = "-r Your number is " + num + "r-";
+		String newresult = formatMessage(m);
+		sendMessage(sender, newresult);
+	}
+	
+	private boolean privatemessage(String message, ServerThread client) {
+		boolean wasPrivate = false;
+		String m = message;
+		try {
+			if (m.indexOf("@") > -1) {
+				String arr[] = m.split("@");
+				String clientName = arr[1];
+				clientName = clientName.trim().toLowerCase();
+				List<String> clientss = new ArrayList<String>();
+				clientss.add(clientName);
+				wasPrivate = true;
+				sendPrivateMessage(client, clientss, message);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return wasPrivate;
+	}
+
+	protected void sendPrivateMessage(ServerThread sender, List<String> list, String message) {
+		Iterator<ServerThread> iterator = clients.iterator();
+		long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
+		sender.sendMessage(sender.getClientId(), message);
+		while (iterator.hasNext()) {
+			ServerThread client = iterator.next();
+			if (list.contains(client.getClientName().toLowerCase())) {
+				boolean messageSent = client.sendMessage(from, message);
+				if (!messageSent) {
+					iterator.remove();
+				}
+				break;
+			}
+		}
+	}
 
 	protected synchronized String formatMessage(String message) {
 		String newmessage = message;
-		if (newmessage.indexOf("@@") > -1) {
-			String[] s1 = newmessage.split("@@");
+		if (newmessage.indexOf("##") > -1) {
+			String[] s1 = newmessage.split("##");
 			String m = "";
 			for (int i = 0; i < s1.length; i++) {
 				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
@@ -226,7 +285,7 @@ public class Room implements AutoCloseable {
 			newmessage = m;
 		}
 		if (newmessage.indexOf("\\") > -1) {
-			String[] s1 = newmessage.split("\\$\\$");
+			String[] s1 = newmessage.split("\\@");
 			String m = "";
 			for (int i = 0; i < s1.length; i++) {
 				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
@@ -239,7 +298,7 @@ public class Room implements AutoCloseable {
 			newmessage = m;
 		}
 		if (newmessage.indexOf("__") > -1) {
-			String[] s1 = newmessage.split("\\*\\*");
+			String[] s1 = newmessage.split("__");
 			String m = "";
 			for (int i = 0; i < s1.length; i++) {
 				if (s1[i].startsWith(" ") || s1[i].endsWith(" ")) {
@@ -257,7 +316,7 @@ public class Room implements AutoCloseable {
 			String m = "";
 			for (int i = 0; i < s1.length; i++) {
 				if (s1[i].startsWith("r") || s1[i].endsWith("r")) {
-					m += TEXT_RED + s1[i].substring(2, s1[i].length() - 2) + TEXT_RESET;
+					m += "<font color =\"red\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
 				} else {
 					m += s1[i];
 				}
@@ -270,7 +329,7 @@ public class Room implements AutoCloseable {
 			String m = "";
 			for (int i = 0; i < s1.length; i++) {
 				if (s1[i].startsWith("y") || s1[i].endsWith("y")) {
-					m += TEXT_YELLOW + s1[i].substring(2, s1[i].length() - 2) + TEXT_RESET;
+					m += "<font color =\"yellow\">" + s1[i].substring(2, s1[i].length() - 2) + "</font>";
 				} else {
 					m += s1[i];
 				}
@@ -278,68 +337,21 @@ public class Room implements AutoCloseable {
 			}
 			newmessage = m;
 		}
+		if (newmessage.indexOf("-p") > -1) {
+			String[] s3 = newmessage.split("\\-");
+			String me = "";
+			for (int i = 0; i < s3.length; i++) {
+				if (s3[i].startsWith("p") || s3[i].endsWith("p")) {
+					me += "<font color =\"purple\">" + s3[i].substring(2, s3[i].length() - 2) + "</font>";
+				} else {
+					me += s3[i];
+				}
+				System.out.println(s3[i]);
+			}
+			newmessage = me;
+		}
 		return newmessage;
 	}
-	// private String formatMessage(String message) {
-	// return TEXT_BLACK + message + TEXT_RESET;
-	// }
-	// String p[] = message.split("\\*");
-	// String newmessage[] = new String[p.length];
-	// for (int i = 0; i < newmessage.length; i++) {
-	// if (p[i].startsWith(" ") || p[i].endsWith(" ")) {
-	// newmessage[i] = p[i];
-	// } else {
-	// char symbol = p[i].charAt(0);
-	// switch (symbol) {
-	// case ('U'):
-	// String underline = String.join("\u0332",message.split("",-1));
-	// newmessage[i] = (underline);
-	// break;
-	// case ('O'):
-	// String bold = (TEXT_BOLD + p[i]);
-	// newmessage[i] = (bold);
-	// break;
-	// case ('I'):
-	// String italics = (TEXT_ITALICS+ p[i]);
-	// newmessage[i] = (italics);
-	// break;
-	// case ('Y'):
-	// String y = TEXT_YELLOW + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (y);
-	// break;
-	// case ('R'):
-	// String r = TEXT_RED + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (r);
-	// break;
-	// case ('b'):
-	// String b = TEXT_BLACK + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (b);
-	// break;
-	// case ('G'):
-	// String g = TEXT_GREEN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (g);
-	// break;
-	// case ('B'):
-	// String bl = TEXT_BLUE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (bl);
-	// break;
-	// case ('P'):
-	// String P = TEXT_PURPLE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (P);
-	// break;
-	// case ('C'):
-	// String c = TEXT_CYAN + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (c);
-	// break;
-	// case ('W'):
-	// String w = TEXT_WHITE + p[i].substring(0, p[i].length() - 1) + TEXT_RESET;
-	// newmessage[i] = (w);
-	// break;
-	// }
-	// }
-	// }
-	// return TEXT_BLACK + message + TEXT_RESET;
-	// // }
 
 	protected synchronized void sendUserListToClient(ServerThread receiver) {
 		logger.log(Level.INFO, String.format("Room[%s] Syncing client list of %s to %s", getName(), clients.size(),

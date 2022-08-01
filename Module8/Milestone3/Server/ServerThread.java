@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +26,25 @@ public class ServerThread extends Thread {
     private Room currentRoom;
     private static Logger logger = Logger.getLogger(ServerThread.class.getName());
     private long myId;
+    List<String> mutedClients = new ArrayList<String>();
+    
+    public boolean isMuted(String clientName) {
+        clientName = clientName.trim().toLowerCase();
+        return mutedClients.contains(clientName);
+    }
+    public void mute (String name) {
+        name = name.trim().toLowerCase();
+        if(!isMuted(name)){
+            mutedClients.add(name);
+        }
+    }
+    public void unmute(String name){
+        name = name.trim().toLowerCase();
+        if (isMuted(name)) {
+            mutedClients.remove(name);
+        }
+    }
+
 
     public void setClientId(long id) {
         myId = id;
@@ -227,4 +248,5 @@ public class ServerThread extends Thread {
         }
         info("Thread cleanup() complete");
     }
+
 }
