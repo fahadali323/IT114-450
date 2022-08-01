@@ -26,6 +26,7 @@ public class ServerThread extends Thread {
     private Room currentRoom;
     private static Logger logger = Logger.getLogger(ServerThread.class.getName());
     private long myId;
+    
     List<String> mutedClients = new ArrayList<String>();
     
     public boolean isMuted(String clientName) {
