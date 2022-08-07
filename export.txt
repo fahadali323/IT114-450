@@ -1,0 +1,7 @@
+fahad: hello
+fahad: how are you
+fahad: my name is fahad
+fahad: how is everyone
+fahad: <font color ="red">The Coin is tails</font>
+fahad: <font color ="red">Your number is 1</font>
+fahad: yay

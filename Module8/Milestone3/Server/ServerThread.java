@@ -1,5 +1,7 @@
 package Module8.Milestone3.Server;
 
+import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -26,26 +28,63 @@ public class ServerThread extends Thread {
     private Room currentRoom;
     private static Logger logger = Logger.getLogger(ServerThread.class.getName());
     private long myId;
-    
+
+    private List<String> chatHistory = new ArrayList<String>();
+    FileWriter fw;
+
+    public void addChatHistory(ServerThread client, String message) {
+        chatHistory.add(client.getClientName() + ": " + message);
+    }
+
+    public void createExport() {
+        try {
+            File expFile = new File("export.txt");
+            if (expFile.createNewFile()) {
+                System.out.println("File created: " + expFile.getName());
+            } else {
+                expFile.delete();
+                expFile.createNewFile();
+                System.out.println("File created: " + expFile.getName());
+            }
+        } catch (IOException e) {
+            System.out.println("An error occurred.");
+            e.printStackTrace();
+        }
+    }
+
+    public void exportChat() {
+        try {
+            fw = new FileWriter("export.txt");
+            for (int i = 0; i < chatHistory.size(); i++) {
+                fw.append(chatHistory.get(i) + "\n");
+            }
+            fw.close();
+        } catch (IOException e) {
+            System.out.println("Error creating filewriter");
+        }
+
+    }
+
     List<String> mutedClients = new ArrayList<String>();
-    
+
     public boolean isMuted(String clientName) {
         clientName = clientName.trim().toLowerCase();
         return mutedClients.contains(clientName);
     }
-    public void mute (String name) {
+
+    public void mute(String name) {
         name = name.trim().toLowerCase();
-        if(!isMuted(name)){
+        if (!isMuted(name)) {
             mutedClients.add(name);
         }
     }
-    public void unmute(String name){
+
+    public void unmute(String name) {
         name = name.trim().toLowerCase();
         if (isMuted(name)) {
             mutedClients.remove(name);
         }
     }
-
 
     public void setClientId(long id) {
         myId = id;
@@ -113,8 +152,8 @@ public class ServerThread extends Thread {
     public boolean sendRoomsList(String[] rooms, String message) {
         RoomResultPayload payload = new RoomResultPayload();
         payload.setRooms(rooms);
-        //Fixed in Module7.Part9
-        if(message != null){
+        // Fixed in Module7.Part9
+        if (message != null) {
             payload.setMessage(message);
         }
         return send(payload);

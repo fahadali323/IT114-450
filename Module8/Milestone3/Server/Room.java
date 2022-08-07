@@ -27,6 +27,8 @@ public class Room implements AutoCloseable {
 	private final static String ROLL = "roll";
 	private final static String MUTE = "mute";
 	private final static String UNMUTE = "unmute";
+	private final static String EXPORT = "export";
+
 	private static Logger logger = Logger.getLogger(Room.class.getName());
 
 	public Room(String name) {
@@ -119,6 +121,10 @@ public class Room implements AutoCloseable {
 						int rol = Integer.valueOf(comm2[1]);
 						roll(client, rol);
 						break;
+					case EXPORT:
+						client.createExport();
+						client.exportChat();
+						break;
 					case MUTE:
 						String mutedUser = comm2[1];
 						// String mutedmessage = "You have been muted";
@@ -129,7 +135,7 @@ public class Room implements AutoCloseable {
 						String unmuteUser = comm2[1];
 						// String umutemessage = "You have been unmuted";
 						client.unmute(unmuteUser);
-						sendPrivateMessage(client, new ArrayList<String>() , message);
+						sendPrivateMessage(client, new ArrayList<String>(), message);
 						break;
 					case DISCONNECT:
 					case LOGOUT:
@@ -146,7 +152,6 @@ public class Room implements AutoCloseable {
 		}
 		return wasCommand;
 	}
-
 
 	protected static void getRooms(String query, ServerThread client) {
 		String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -199,12 +204,13 @@ public class Room implements AutoCloseable {
 			Iterator<ServerThread> iter = clients.iterator();
 			while (iter.hasNext()) {
 				ServerThread client = iter.next();
-				if(!client.isMuted(sender.getClientName())){
+				if (!client.isMuted(sender.getClientName())) {
 					boolean messageSent = client.sendMessage(from, message);
+					client.addChatHistory(client, message);
 					if (!messageSent) {
 						handleDisconnect(iter, client);
 					}
-				} 
+				}
 			}
 		}
 	}
@@ -233,7 +239,7 @@ public class Room implements AutoCloseable {
 		String newresult = formatMessage(m);
 		sendMessage(sender, newresult);
 	}
-	
+
 	private boolean privatemessage(String message, ServerThread client) {
 		boolean wasPrivate = false;
 		String m = message;
