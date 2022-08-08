@@ -260,4 +260,4 @@ public class ClientUI extends JFrame implements IClientEvents, ICardControls {
             chatPanel.addText("Joined room " + roomName);
         }
     }
-}
+}   
