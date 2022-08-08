@@ -2,15 +2,19 @@ package Module9.Milestone4.Server;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import Module9.Milestone4.Common.Constants;
+//Milesonte 4 imports
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
-//Milesonte 2 imports
+import Module8.Milestone3.Common.Constants;
 
 public class Room implements AutoCloseable {
 	private String name;
@@ -27,7 +31,11 @@ public class Room implements AutoCloseable {
 	private final static String ROLL = "roll";
 	private final static String MUTE = "mute";
 	private final static String UNMUTE = "unmute";
+	private final static String EXPORT = "export";
+
 	private static Logger logger = Logger.getLogger(Room.class.getName());
+
+	public HashMap<String, ArrayList<String>> muteCheck = new HashMap<String, ArrayList<String>>();
 
 	public Room(String name) {
 		this.name = name;
@@ -93,6 +101,56 @@ public class Room implements AutoCloseable {
 	 * @param client  The sender of the message (since they'll be the ones
 	 *                triggering the actions)
 	 */
+
+	public boolean isMuted(ServerThread Client, String clientName) {
+		clientName = clientName.trim().toLowerCase();
+		ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
+		return mu.contains(clientName);
+	}
+	public void mute(ServerThread Client, String name) {
+		name = name.trim().toLowerCase();
+		if (!isMuted(Client, name)) {
+			ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
+			mu.add(name);
+			muteCheck.put(Client.getClientName().trim().toLowerCase(), mu);
+		}
+	}
+
+	public void unmute(ServerThread Client, String name) {
+		name = name.trim().toLowerCase();
+		if (isMuted(Client, name)) {
+			ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
+			mu.remove(name);
+			muteCheck.put(Client.getClientName().trim().toLowerCase(), mu);
+		}
+	}
+
+	public void muteExport(ServerThread Client) {
+		try {
+			File muteExp = new File(Client.getClientName().trim().toLowerCase() + ".txt");
+			if (muteExp.createNewFile()) {
+				System.out.println("File created: " + muteExp.getName());
+			}
+
+		} catch (IOException e) {
+			System.out.println("An error occured.");
+			e.printStackTrace();
+		}
+
+		// now the actual writing into the mutelist.txt file
+
+		try {
+			FileWriter fw = new FileWriter(Client.getClientName().trim().toLowerCase() + ".txt");
+			ArrayList<String> m = muteCheck.get(Client.getClientName());
+			for (int i = 0; i < m.size(); i++) {
+				fw.append(m.get(i) + "\n");
+			}
+			fw.close();
+		} catch (IOException e) {
+			System.out.println("Error creating filewriter");
+		}
+	}
+
 	private boolean processCommands(String message, ServerThread client) {
 		boolean wasCommand = false;
 		try {
@@ -119,17 +177,25 @@ public class Room implements AutoCloseable {
 						int rol = Integer.valueOf(comm2[1]);
 						roll(client, rol);
 						break;
+					case EXPORT:
+						client.createExport();
+						client.exportChat();
+						break;
 					case MUTE:
-						String mutedUser = comm2[1];
-						// String mutedmessage = "You have been muted";
-						client.mute(mutedUser);
-						sendPrivateMessage(client, new ArrayList<String>(), message);
+						String mUser = comm2[1];
+						mute(client, mUser);
+						ArrayList<String> m = new ArrayList<String>();
+						m.add(mUser);
+						muteExport(client);
+						sendPrivateMessage(client, m, client.getClientName() + " has muted you");
 						break;
 					case UNMUTE:
-						String unmuteUser = comm2[1];
-						// String umutemessage = "You have been unmuted";
-						client.unmute(unmuteUser);
-						sendPrivateMessage(client, new ArrayList<String>() , message);
+						String umUser = comm2[1];
+						unmute(client, umUser);
+						ArrayList<String> n = new ArrayList<String>();
+						n.add(umUser);
+						muteExport(client);
+						sendPrivateMessage(client, n, client.getClientName() + " has unmuted you");
 						break;
 					case DISCONNECT:
 					case LOGOUT:
@@ -146,7 +212,6 @@ public class Room implements AutoCloseable {
 		}
 		return wasCommand;
 	}
-
 
 	protected static void getRooms(String query, ServerThread client) {
 		String[] rooms = Server.INSTANCE.getRooms(query).toArray(new String[0]);
@@ -199,12 +264,13 @@ public class Room implements AutoCloseable {
 			Iterator<ServerThread> iter = clients.iterator();
 			while (iter.hasNext()) {
 				ServerThread client = iter.next();
-				if(!client.isMuted(sender.getClientName())){
+				if (!isMuted(client, sender.getClientName())) {
 					boolean messageSent = client.sendMessage(from, message);
+					client.addChatHistory(client, message);
 					if (!messageSent) {
 						handleDisconnect(iter, client);
 					}
-				} 
+				}
 			}
 		}
 	}
@@ -233,7 +299,7 @@ public class Room implements AutoCloseable {
 		String newresult = formatMessage(m);
 		sendMessage(sender, newresult);
 	}
-	
+
 	private boolean privatemessage(String message, ServerThread client) {
 		boolean wasPrivate = false;
 		String m = message;
@@ -253,18 +319,19 @@ public class Room implements AutoCloseable {
 		return wasPrivate;
 	}
 
-	protected void sendPrivateMessage(ServerThread sender, List<String> list, String message) {
+	protected void sendPrivateMessage(ServerThread sender, List<String> listMessage, String message) {
 		Iterator<ServerThread> iterator = clients.iterator();
 		long from = (sender == null) ? Constants.DEFAULT_CLIENT_ID : sender.getClientId();
-		sender.sendMessage(sender.getClientId(), message);
 		while (iterator.hasNext()) {
 			ServerThread client = iterator.next();
-			if (list.contains(client.getClientName().toLowerCase())) {
-				boolean messageSent = client.sendMessage(from, message);
-				if (!messageSent) {
-					iterator.remove();
+			if (listMessage.contains(client.getClientName().toLowerCase())) {
+				if (!isMuted(client, sender.getClientName())) {
+					boolean messageSent = client.sendMessage(from, message);
+					if (!messageSent) {
+						iterator.remove();
+					}
+					break;
 				}
-				break;
 			}
 		}
 	}

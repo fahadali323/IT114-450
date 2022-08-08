@@ -1,5 +1,6 @@
 package Module9.Milestone4.Server;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -8,7 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-
+import java.util.Scanner;
 public enum Server {
     INSTANCE;
 
@@ -22,6 +23,22 @@ public enum Server {
     private Queue<ServerThread> incomingClients = new LinkedList<ServerThread>();
     // https://www.geeksforgeeks.org/killing-threads-in-java/
     private volatile boolean isRunning = false;
+
+    public ArrayList<String> muteImport(ServerThread Client) {
+        ArrayList<String> mutedClients = new ArrayList<String>();
+        try {
+            Scanner sc = new Scanner(new File(Client.getClientName().trim().toLowerCase() + ".txt"));
+            while (sc.hasNextLine()){
+                mutedClients.add(sc.nextLine());
+            }
+            sc.close();
+        } catch (IOException e) {
+            System.out.println("File not found.");
+            e.printStackTrace();
+        }
+        return mutedClients;
+    }
+
 
     private void start(int port) {
         this.port = port;
@@ -129,6 +146,7 @@ public enum Server {
             }
             System.out.println(client.getName() + " joining room " + newRoom.getName());
             newRoom.addClient(client);
+            newRoom.muteCheck.put(client.getClientName().trim().toLowerCase(),muteImport(client));
             return true;
         }
         return false;
