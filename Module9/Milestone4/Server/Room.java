@@ -101,22 +101,24 @@ public class Room implements AutoCloseable {
 	 * @param client  The sender of the message (since they'll be the ones
 	 *                triggering the actions)
 	 */
-
+	// fa376
+	// 8/8/2020 exporting the mute list if a user mutes another userS
 	public boolean isMuted(ServerThread Client, String clientName) {
 		clientName = clientName.trim().toLowerCase();
 		ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
 		return mu.contains(clientName);
 	}
+
 	public void mute(ServerThread Client, String name) {
 		name = name.trim().toLowerCase();
 		if (!isMuted(Client, name)) {
 			ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
 			mu.add(name);
 			muteCheck.put(Client.getClientName().trim().toLowerCase(), mu);
-			
+
 		}
 	}
-	
+
 	public void unmute(ServerThread Client, String name) {
 		name = name.trim().toLowerCase();
 		if (isMuted(Client, name)) {
@@ -126,6 +128,9 @@ public class Room implements AutoCloseable {
 		}
 	}
 
+	// fa376
+	// 8/8/2022
+	// how mute list is exported and saved when the user types the command /mute
 	public void muteExport(ServerThread Client) {
 		try {
 			File muteExp = new File(Client.getClientName().trim().toLowerCase() + ".txt");
@@ -182,6 +187,8 @@ public class Room implements AutoCloseable {
 						client.createExport();
 						client.exportChat();
 						break;
+					// fa376
+					// 8/8/2020 exporting the mute list if a user mutes another userS
 					case MUTE:
 						String mUser = comm2[1];
 						mute(client, mUser);
