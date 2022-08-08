@@ -1,4 +1,0 @@
-test2: hello
-test2: hi
-test2: how are you
-test2: hi

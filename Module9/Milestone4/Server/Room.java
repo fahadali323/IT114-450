@@ -113,9 +113,10 @@ public class Room implements AutoCloseable {
 			ArrayList<String> mu = muteCheck.get(Client.getClientName().trim().toLowerCase());
 			mu.add(name);
 			muteCheck.put(Client.getClientName().trim().toLowerCase(), mu);
+			
 		}
 	}
-
+	
 	public void unmute(ServerThread Client, String name) {
 		name = name.trim().toLowerCase();
 		if (isMuted(Client, name)) {
