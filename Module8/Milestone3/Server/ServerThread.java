@@ -29,22 +29,22 @@ public class ServerThread extends Thread {
     private static Logger logger = Logger.getLogger(ServerThread.class.getName());
     private long myId;
 
-    private List<String> chatHistory = new ArrayList<String>();
-    FileWriter fw;
+    private List<String> chatHist= new ArrayList<String>();
+    FileWriter filew;
 
     public void addChatHistory(ServerThread client, String message) {
-        chatHistory.add(client.getClientName() + ": " + message);
+        chatHist.add(client.getClientName() + ": " + message);
     }
 
     public void createExport() {
         try {
-            File expFile = new File("export.txt");
-            if (expFile.createNewFile()) {
-                System.out.println("File created: " + expFile.getName());
+            File exportFile = new File("export.txt");
+            if (exportFile.createNewFile()) {
+                System.out.println("File created: " + exportFile.getName());
             } else {
-                expFile.delete();
-                expFile.createNewFile();
-                System.out.println("File created: " + expFile.getName());
+                exportFile.delete();
+                exportFile.createNewFile();
+                System.out.println("File created: " + exportFile.getName());
             }
         } catch (IOException e) {
             System.out.println("An error occurred.");
@@ -54,11 +54,11 @@ public class ServerThread extends Thread {
 
     public void exportChat() {
         try {
-            fw = new FileWriter("export.txt");
-            for (int i = 0; i < chatHistory.size(); i++) {
-                fw.append(chatHistory.get(i) + "\n");
+            filew = new FileWriter("export.txt");
+            for (int i = 0; i < chatHist.size(); i++) {
+                filew.append(chatHist.get(i) + "\n");
             }
-            fw.close();
+            filew.close();
         } catch (IOException e) {
             System.out.println("Error creating filewriter");
         }
